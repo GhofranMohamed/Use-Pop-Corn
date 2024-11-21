@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const tempMovieData = [
   {
@@ -50,7 +50,7 @@ const tempWatchedData = [
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-function NavBar({children}) {
+function NavBar({ children }) {
   return (
     <nav className="nav-bar">
       <Logo />
@@ -68,7 +68,7 @@ function Logo() {
   );
 }
 
-function MoviesNum({movies}) {
+function MoviesNum({ movies }) {
   return (
     <p className="num-results">
       Found <strong>{movies.length}</strong> results
@@ -89,16 +89,13 @@ function Search() {
   );
 }
 
-function Main({children}) {
+function Main({ children }) {
   return (
     <main className="main">
-      <>
-        {children}
-      </>
+      <>{children}</>
     </main>
   );
 }
-
 
 function WatchedMovie({ movie }) {
   return (
@@ -137,7 +134,7 @@ function WatchedSummry({ watched }) {
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
   const avgUserRating = average(watched.map((movie) => movie.userRating));
   const avgRuntime = average(watched.map((movie) => movie.runtime));
-  
+
   return (
     <div className="summary">
       <h2>Movies you watched</h2>
@@ -163,14 +160,11 @@ function WatchedSummry({ watched }) {
   );
 }
 
-function List({children}) {
+function List({ children }) {
   const [isOpen, setIsOpen] = useState(true);
   return (
     <div className="box">
-      <button
-        className="btn-toggle"
-        onClick={() => setIsOpen((open) => !open)}
-        >
+      <button className="btn-toggle" onClick={() => setIsOpen((open) => !open)}>
         {isOpen ? "–" : "+"}
       </button>
       {isOpen && children}
@@ -178,7 +172,7 @@ function List({children}) {
   );
 }
 
-function Movies({movies}) {
+function Movies({ movies }) {
   return (
     <ul className="list">
       {movies?.map((movie) => (
@@ -203,27 +197,66 @@ function Movie({ movie }) {
   );
 }
 
+function Loader() {
+  return <p className="loader">Loading.....</p>;
+}
+
+function Error({error}){
+  return(
+    <p className="error">{error}</p>
+  )
+
+}
+const KEY = "3a2fb12b";
+
 export default function App() {
-  const [movies, setMovies] = useState(tempMovieData);
-  const [watched, setWatched] = useState(tempWatchedData);
+  const [movies, setMovies] = useState([]);
+  const [watched, setWatched] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error , setError] = useState("");
+
+  useEffect(function () {
+    async function fetchMovies() {
+      try{
+      const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=abvghks`);
+
+      if (!res.ok)
+        throw new Error("Failed to fetch movies check your internet connection");
+
+      const data = await res.json();
+
+      if (data.Response === "False")
+        throw new Error("No movies found");
+
+      setMovies(data.Search);
+      console.log(data);
+    } catch(err){
+      console.error(err.message);
+      setError(err.message);
+    } finally{
+      
+      setIsLoading(false);
+    } }
+    fetchMovies();
+  }, []);
+
   return (
     <>
       <NavBar>
-        
         <Search />
-        <MoviesNum movies={movies}/>
+        <MoviesNum movies={movies} />
       </NavBar>
       <Main>
         <List>
-          <Movies movies={movies} />
+         {isLoading && <Loader />}
+         {!isLoading && !error && <Movies movies={movies} />}
+         {error && <Error error={error} />}
         </List>
         <List>
           <WatchedSummry watched={watched} />
           <WatchedMovies watched={watched} />
         </List>
-        
       </Main>
-        
     </>
   );
 }
