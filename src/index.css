@@ -265,7 +265,7 @@ body {
   background-color: var(--color-background-100);
   display: flex;
   flex-direction: column;
-  gap: 1.4rem;
+  gap: 1.6rem;
 }
 
 .details-overview h2 {
